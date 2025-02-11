@@ -1,11 +1,14 @@
-﻿namespace SaririBackend.Classes
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SaririBackend.Classes
 {
     public class AdminAction
     {
-        public int Id { get; set; } // the action ID
-        public int AdminId { get; set; } // the ID of the Admin
-        public string ActionType { get; set; } // the Type of action
+        [Key]
+        public int actionID { get; set; } // the action ID
+        public int adminID { get; set; } // the ID of the Admin
+        public string actionType { get; set; } // the Type of action
 
-        public DateTime TimeStamp { get; set; } // the time of the action
+        public DateTime timestamp { get; set; } // the time of the action
     }
 }

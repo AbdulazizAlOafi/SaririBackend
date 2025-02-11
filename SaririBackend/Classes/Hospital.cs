@@ -1,19 +1,21 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace SaririBackend.Classes
 {
     public class Hospital
     {
-        public int Id { get; set; } // Primary Key
-        public string Name { get; set; } // Hospital Name
+        [Key]
+        public int hospitalID { get; set; } // Primary Key
+        public string hospitalName { get; set; } // Hospital Name
         
-        public string Location { get; set; } // Hospital Location
+        public string location { get; set; } // Hospital Location
 
-        public int PhoneNumber { get; set; } // Phone Number of the Hospital
+        public int phoneNumber { get; set; } // Phone Number of the Hospital
         
-        public int BedCapacity { get; set; } // The maximum bed capacity of  a hospital
+        public int bedCapacity { get; set; } // The maximum bed capacity of  a hospital
 
         // Foreign Key
-        public int? UserId { get; set; } // the user Id to be associated with the hospital
+        public int? userID { get; set; } // the user Id to be associated with the hospital
     }
 }
