@@ -28,8 +28,15 @@ namespace SaririBackend.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPatient([FromBody] Patient patient)
         {
+            if (patient == null)
+            {
+                return BadRequest("Invalid patient data.");
+            }
+
             _context.Patient.Add(patient);
             await _context.SaveChangesAsync();
+
+            // Return the created patient with the auto-generated patientID
             return CreatedAtAction(nameof(GetPatient), new { id = patient.patientID }, patient);
         }
         // get a Patient by id
@@ -63,7 +70,7 @@ namespace SaririBackend.Controllers
 
             // Update the properties of the existing entity
             existingPatient.paitentName = patient.paitentName;
-            existingPatient.paitentAge = patient.paitentAge;
+            existingPatient.paitentNationalID = patient.paitentNationalID;
             existingPatient.emergencyContact = patient.emergencyContact;
             existingPatient.userID = patient.userID;
             existingPatient.recordID = patient.recordID;

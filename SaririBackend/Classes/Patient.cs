@@ -1,15 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SaririBackend.Classes
 {
     public class Patient
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int patientID {  get; set; } // Patient Id
         public string paitentName { get; set; } // Patient Name
-        public int paitentAge { get; set; } // Patient Age
+        public string paitentNationalID { get; set; } // Patient Age
 
-        public int? emergencyContact {  get; set; } // Emergency contact of the patient if any
+        public string? emergencyContact {  get; set; } // Emergency contact of the patient if any
         
         public int? userID { get; set; } // the user ID of the patient
 
