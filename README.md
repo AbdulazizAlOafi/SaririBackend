@@ -1,1 +1,1 @@
-I just wanna Gradute nothing else really
+وما توفيقي الا بالله
