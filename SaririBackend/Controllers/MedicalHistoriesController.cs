@@ -50,6 +50,26 @@ namespace SaririBackend.Controllers
             return medicalHistory;
         }
 
+        // GET: api/MedicalHistories/byPatient/{patientID}
+        [HttpGet("byPatient/{patientID}")]
+        public async Task<ActionResult<MedicalHistory>> GetMedicalHistoryByPatientID(int patientID)
+        {
+            if (_context.MedicalHistory == null)
+            {
+                return NotFound("There are no Medical Records.");
+            }
+
+            var medicalHistory = await _context.MedicalHistory.FirstOrDefaultAsync(mh => mh.patientID == patientID);
+
+            if (medicalHistory == null)
+            {
+                return NotFound("No medical history found for this patient.");
+            }
+
+            return medicalHistory;
+        }
+
+
         // PUT: api/MedicalHistories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -86,14 +106,17 @@ namespace SaririBackend.Controllers
         [HttpPost]
         public async Task<ActionResult<MedicalHistory>> PostMedicalHistory(MedicalHistory medicalHistory)
         {
-          if (_context.MedicalHistory == null)
-          {
-              return Problem("Entity set 'AppDbContext.MedicalHistory'  is null.");
-          }
+            if (medicalHistory == null)
+            {
+                return BadRequest("Medical history data is null.");
+            }
+
+            medicalHistory.lastUpdated = DateTime.UtcNow; 
+
             _context.MedicalHistory.Add(medicalHistory);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetMedicalHistory", new { id = medicalHistory.recordID }, medicalHistory);
+            return CreatedAtAction(nameof(GetMedicalHistory), new { id = medicalHistory.recordID }, medicalHistory);
         }
 
         // DELETE: api/MedicalHistories/5

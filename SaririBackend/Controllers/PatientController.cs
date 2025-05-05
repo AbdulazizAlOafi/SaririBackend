@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SaririBackend.Classes;
 using SaririBackend.Data;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SaririBackend.Controllers
@@ -26,18 +27,24 @@ namespace SaririBackend.Controllers
         }
         // add new Patient
         [HttpPost]
-        public async Task<IActionResult> AddPatient([FromBody] Patient patient)
+        public async Task<ActionResult<Patient>> PostPatient(Patient patient)
         {
-            if (patient == null)
+            if (_context.Patient == null)
             {
-                return BadRequest("Invalid patient data.");
+                return Problem("Entity set 'AppDbContext.Patient' is null.");
+            }
+
+            // Check if the national ID already exists
+            var existingPatient = await _context.Patient.FirstOrDefaultAsync(p => p.paitentNationalID == patient.paitentNationalID);
+            if (existingPatient != null)
+            {
+                return Conflict(new { message = "National ID already exists." });
             }
 
             _context.Patient.Add(patient);
             await _context.SaveChangesAsync();
 
-            // Return the created patient with the auto-generated patientID
-            return CreatedAtAction(nameof(GetPatient), new { id = patient.patientID }, patient);
+            return CreatedAtAction("GetPatient", new { id = patient.patientID }, patient);
         }
         // get a Patient by id
         [HttpGet("{id}")]
@@ -51,51 +58,77 @@ namespace SaririBackend.Controllers
             return paitent;
         }
 
-        // update one Patient
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutPatient(int id, Patient patient)
+        // Get Patient by userID (foreign key)
+        [HttpGet("byUser/{userID}")]
+        public async Task<ActionResult<Patient>> GetPatientByUserID(int userID)
         {
-            // Check if the ID in the URL matches the ID in the request body
-            if (id != patient.patientID)
+            var patient = await _context.Patient.FirstOrDefaultAsync(p => p.userID == userID);
+
+            if (patient == null)
             {
-                return BadRequest("ID in the URL does not match the ID in the request body.");
+                return NotFound(new { message = "Patient not found for this user." });
             }
 
-            // Fetch the existing Patient from the database
-            var existingPatient = await _context.Patient.FindAsync(id);
-            if (existingPatient == null)
-            {
-                return NotFound("Patient not found.");
-            }
+            return patient;
+        }
 
-            // Update the properties of the existing entity
-            existingPatient.paitentName = patient.paitentName;
-            existingPatient.paitentNationalID = patient.paitentNationalID;
-            existingPatient.emergencyContact = patient.emergencyContact;
-            existingPatient.userID = patient.userID;
-            existingPatient.recordID = patient.recordID;
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPatient(int id, [FromBody] JsonElement requestBody)
+        {
             try
             {
-                // Save changes to the database
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // Handle concurrency conflicts
-                if (!_context.Patient.Any(e => e.patientID == id))
+                var existingPatient = await _context.Patient.FindAsync(id);
+                if (existingPatient == null)
                 {
-                    return NotFound("Patient not found.");
+                    return NotFound("❌ Patient not found.");
                 }
-                else
-                {
-                    return StatusCode(500, "An error occurred while updating the Patient. Please try again.");
-                }
-            }
 
-            // Return a success message
-            return Ok("Patient updated successfully.");
+                if (requestBody.TryGetProperty("paitentName", out var nameProp) && nameProp.ValueKind == JsonValueKind.String)
+                {
+                    existingPatient.paitentName = nameProp.GetString();
+                }
+
+                if (requestBody.TryGetProperty("paitentNationalID", out var nationalIDProp) && nationalIDProp.ValueKind == JsonValueKind.String)
+                {
+                    existingPatient.paitentNationalID = nationalIDProp.GetString();
+                }
+
+                if (requestBody.TryGetProperty("emergencyContact", out var contactProp) && contactProp.ValueKind == JsonValueKind.String)
+                {
+                    existingPatient.emergencyContact = contactProp.GetString();
+                }
+
+                if (requestBody.TryGetProperty("userID", out var userIDProp) && userIDProp.TryGetInt32(out int userIdValue))
+                {
+                    existingPatient.userID = userIdValue;
+                }
+
+                if (requestBody.TryGetProperty("recordID", out var recordIDProp))
+                {
+                    if (recordIDProp.ValueKind == JsonValueKind.Null)
+                    {
+                        existingPatient.recordID = null;
+                    }
+                    else if (recordIDProp.TryGetInt32(out int recordIdValue))
+                    {
+                        existingPatient.recordID = recordIdValue;
+                    }
+                    else
+                    {
+                        return BadRequest("⚠️ recordID يجب أن يكون رقماً صحيحاً أو فارغاً.");
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok("✅ تم تحديث بيانات المريض بنجاح.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ حدث خطأ غير متوقع أثناء التحديث: {ex.Message}");
+            }
         }
+
         // DELETE patient by id
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePatient(int id)

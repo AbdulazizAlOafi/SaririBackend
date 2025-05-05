@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SaririBackend.Classes
 {
     public class Hospital
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int hospitalID { get; set; } // Primary Key
         public string hospitalName { get; set; } // Hospital Name
         

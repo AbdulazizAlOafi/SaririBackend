@@ -53,6 +53,22 @@ namespace SaririBackend.Controllers
             }
             return Beds.bedCapacity;
         }
+
+        // Get Patient by userID (foreign key)
+        [HttpGet("byUser/{userID}")]
+        public async Task<ActionResult<Hospital>> GetPatientByUserID(int userID)
+        {
+            var hospital = await _context.Hospital.FirstOrDefaultAsync(p => p.userID == userID);
+
+            if (hospital == null)
+            {
+                return NotFound(new { message = "Patient not found for this user." });
+            }
+
+            return hospital;
+        }
+
+
         // update one hospital
         [HttpPut("{id}")]
         public async Task<IActionResult> PutHospital(int id, Hospital hospital)
