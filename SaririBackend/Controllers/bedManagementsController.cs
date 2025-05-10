@@ -139,6 +139,72 @@ namespace SaririBackend.Controllers
             return Ok("Bed status updated successfully.");
         }
 
+        [HttpPost("addBeds")]
+        public async Task<IActionResult> AddBeds(int hospitalId, int numberOfBeds)
+        {
+            var hospital = await _context.Hospital.FindAsync(hospitalId);
+            if (hospital == null)
+            {
+                return NotFound("Hospital not found.");
+            }
+
+            // Adding new free beds
+            for (int i = 0; i < numberOfBeds; i++)
+            {
+                var newBed = new bedManagement
+                {
+                    hospitalID = hospitalId,
+                    condition = false,  // Bed is free
+                    paitentID = null
+                };
+
+                _context.bedManagement.Add(newBed);
+            }
+
+            // Update the hospital's bed capacity
+            hospital.bedCapacity += numberOfBeds;
+
+            await _context.SaveChangesAsync();
+
+            return Ok($"{numberOfBeds} beds added to the hospital.");
+        }
+
+        [HttpPost("deleteBeds")]
+        public async Task<IActionResult> DeleteBeds(int hospitalId, int numberOfBedsToDelete)
+        {
+            var hospital = await _context.Hospital.FindAsync(hospitalId);
+            if (hospital == null)
+            {
+                return NotFound("Hospital not found.");
+            }
+
+            // Get all free beds for the hospital
+            var freeBeds = await _context.bedManagement
+                                        .Where(b => b.hospitalID == hospitalId && b.condition == false)
+                                        .ToListAsync();
+
+            if (freeBeds.Count < numberOfBedsToDelete)
+            {
+                return BadRequest($"Not enough free beds available. Only {freeBeds.Count} free beds found.");
+            }
+
+            // Delete the specified number of free beds
+            for (int i = 0; i < numberOfBedsToDelete; i++)
+            {
+                var bedToDelete = freeBeds[i];
+                _context.bedManagement.Remove(bedToDelete);
+            }
+
+            // Update the hospital's bed capacity
+            hospital.bedCapacity -= numberOfBedsToDelete;
+
+            await _context.SaveChangesAsync();
+
+            return Ok($"{numberOfBedsToDelete} free beds deleted from the hospital.");
+        }
+
+
+
         // POST: api/bedManagements
         [HttpPost]
         public async Task<ActionResult<bedManagement>> PostbedManagement(bedManagement bedManagement)

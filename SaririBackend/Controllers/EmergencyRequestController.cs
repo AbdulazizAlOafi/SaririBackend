@@ -165,11 +165,17 @@ namespace SaririBackend.Controllers
                 return Problem("Entity set 'AppDbContext.EmergencyRequest' is null.");
             }
 
-            // Ensure status is null (in process) by default if not provided
-            if (emergencyRequest.status == null)
+            // Check if the patient already has a pending (null status) request
+            bool hasPendingRequest = await _context.EmergencyRequest
+                .AnyAsync(e => e.patientID == emergencyRequest.patientID && e.status == null);
+
+            if (hasPendingRequest)
             {
-                emergencyRequest.status = null;
+                return BadRequest("You already have a pending emergency request. Please wait for it to be processed before submitting another.");
             }
+
+            // Ensure status is null (pending) by default
+            emergencyRequest.status = null;
 
             _context.EmergencyRequest.Add(emergencyRequest);
             await _context.SaveChangesAsync();
